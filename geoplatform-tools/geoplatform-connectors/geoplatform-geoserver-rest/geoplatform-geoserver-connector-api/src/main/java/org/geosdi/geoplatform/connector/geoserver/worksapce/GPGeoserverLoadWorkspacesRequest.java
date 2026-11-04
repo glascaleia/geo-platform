@@ -38,6 +38,7 @@ package org.geosdi.geoplatform.connector.geoserver.worksapce;
 import net.jcip.annotations.ThreadSafe;
 import org.geosdi.geoplatform.connector.geoserver.model.workspace.GPGeoserverEmptyWorkspaces;
 import org.geosdi.geoplatform.connector.geoserver.model.workspace.GPGeoserverWorkspaces;
+import org.geosdi.geoplatform.connector.geoserver.model.workspace.IGPGeoserverWorkspace;
 import org.geosdi.geoplatform.connector.geoserver.request.GPGeoserverGetConnectorRequest;
 import org.geosdi.geoplatform.connector.geoserver.request.workspaces.GeoserverLoadWorkspacesRequest;
 import org.geosdi.geoplatform.connector.server.GPServerConnector;
@@ -45,6 +46,7 @@ import org.geosdi.geoplatform.support.jackson.JacksonSupport;
 
 import javax.annotation.Nonnull;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -89,8 +91,17 @@ class GPGeoserverLoadWorkspacesRequest extends GPGeoserverGetConnectorRequest<GP
         return GPGeoserverEmptyWorkspaces.class;
     }
 
+    /**
+     * Con GeoServer senza workspace la risposta è {"workspaces":""} e la lista resta null: in quel caso restituisce una
+     * lista vuota invece di lanciare NullPointerException.
+     *
+     * @return {@link List<String>} i nomi dei workspace, vuota se non ce ne sono
+     * @throws Exception
+     */
     @Override
     public List<String> getWorkpacesNames() throws Exception {
-        return this.getResponse().getWorkspaces().stream().map(c -> c.getWorkspaceName()).collect(Collectors.toList());
+        List<IGPGeoserverWorkspace> workspaces = this.getResponse().getWorkspaces();
+        return (workspaces != null) ? workspaces.stream().map(c -> c.getWorkspaceName()).collect(Collectors.toList())
+                : new ArrayList<>();
     }
 }
