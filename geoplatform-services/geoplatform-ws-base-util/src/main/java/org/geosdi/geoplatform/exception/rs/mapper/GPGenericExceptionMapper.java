@@ -1,0 +1,84 @@
+/*
+ *
+ *    geo-platform
+ *    Rich webgis framework
+ *    http://geo-platform.org
+ *   ====================================================================
+ *
+ *   Copyright (C) 2008-2026 geoSDI Group (CNR IMAA - Potenza - ITALY).
+ *
+ *   This program is free software: you can redistribute it and/or modify it
+ *   under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version. This program is distributed in the
+ *   hope that it will be useful, but WITHOUT ANY WARRANTY; without
+ *   even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ *   A PARTICULAR PURPOSE. See the GNU General Public License
+ *   for more details. You should have received a copy of the GNU General
+ *   Public License along with this program. If not, see http://www.gnu.org/licenses/
+ *
+ *   ====================================================================
+ *
+ *   Linking this library statically or dynamically with other modules is
+ *   making a combined work based on this library. Thus, the terms and
+ *   conditions of the GNU General Public License cover the whole combination.
+ *
+ *   As a special exception, the copyright holders of this library give you permission
+ *   to link this library with independent modules to produce an executable, regardless
+ *   of the license terms of these independent modules, and to copy and distribute
+ *   the resulting executable under terms of your choice, provided that you also meet,
+ *   for each linked independent module, the terms and conditions of the license of
+ *   that module. An independent module is a module which is not derived from or
+ *   based on this library. If you modify this library, you may extend this exception
+ *   to your version of the library, but you are not obligated to do so. If you do not
+ *   wish to do so, delete this exception statement from your version.
+ */
+package org.geosdi.geoplatform.exception.rs.mapper;
+
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.ext.ExceptionMapper;
+import jakarta.ws.rs.ext.Provider;
+import org.geosdi.geoplatform.exception.rs.GPRestExceptionMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import static jakarta.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
+import static jakarta.ws.rs.core.Response.status;
+import static org.geosdi.geoplatform.exception.GPExceptionFaultType.ServerInternalFault;
+
+/**
+ * Converte in {@link GPRestExceptionMessage} (500) le eccezioni che non sono
+ * {@link org.geosdi.geoplatform.exception.GPExceptionFault}: senza, CXF le rilancia al container e il client riceve la
+ * pagina d'errore HTML di Tomcat con lo stack trace invece del messaggio. Le {@link org.geosdi.geoplatform.exception.GPExceptionFault} restano a
+ * {@link GPExceptionFaultMapper}, che JAX-RS sceglie perché più specifico.
+ *
+ * @author Giuseppe La Scaleia - CNR IMAA geoSDI Group
+ * @email giuseppe.lascaleia@geosdi.org
+ */
+@Provider
+@Produces(MediaType.APPLICATION_JSON)
+public class GPGenericExceptionMapper implements ExceptionMapper<Exception> {
+
+    private static final Logger logger = LoggerFactory.getLogger(GPGenericExceptionMapper.class);
+
+    /**
+     * Le {@link WebApplicationException} (per esempio 404 o 415 di JAX-RS) tengono la loro risposta.
+     *
+     * @param theException l'eccezione lanciata dal servizio
+     * @return {@link Response} la risposta della {@link WebApplicationException}, altrimenti 500 con il messaggio
+     */
+    @Override
+    public Response toResponse(Exception theException) {
+        if (theException instanceof WebApplicationException) {
+            return ((WebApplicationException) theException).getResponse();
+        }
+        logger.error("Errore non gestito dal servizio REST", theException);
+        String message = (theException.getMessage() != null) ? theException.getMessage()
+                : theException.getClass().getSimpleName();
+        return status(INTERNAL_SERVER_ERROR).entity(new GPRestExceptionMessage(ServerInternalFault, message))
+                .type(MediaType.APPLICATION_JSON_TYPE).build();
+    }
+}
