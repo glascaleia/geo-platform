@@ -41,6 +41,8 @@ import org.geosdi.geoplatform.connector.server.request.WFSTransactionRequest;
 import org.geosdi.geoplatform.connector.wfs.response.AttributeDTO;
 import org.geosdi.geoplatform.exception.ResourceNotFoundFault;
 import org.geosdi.geoplatform.gui.shared.wfs.TransactionOperation;
+import org.geosdi.geoplatform.xml.ows.v100.ExceptionReport;
+import org.geosdi.geoplatform.xml.ows.v100.ExceptionType;
 import org.geosdi.geoplatform.xml.wfs.v110.TransactionResponseType;
 
 import javax.xml.namespace.QName;
@@ -48,6 +50,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
+import java.util.stream.Collectors;
 
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
@@ -87,8 +90,7 @@ public class GPTransactionService extends AbstractFeatureService implements Tran
 
         serverURL = serverURL.replace("wms", "wfs");
         if (!wfsConfigurator.matchDefaultDataSource(serverURL)) {
-            throw new IllegalStateException("Edit Mode cannot be applied to the server with url "
-                    + wfsConfigurator.getDefaultWFSDataSource());
+            throw new IllegalStateException(editNotAllowedMessage(serverURL));
         }
 
         try {
@@ -99,7 +101,7 @@ public class GPTransactionService extends AbstractFeatureService implements Tran
             request.withTypeName(new QName(typeName));
             request.withFID(fid);
             request.withAttributes(attributes);
-            TransactionResponseType response = request.getResponse();
+            TransactionResponseType response = checkResponse(request.getResponse(), "UPDATE", typeName);
             if (response.getTransactionSummary().getTotalUpdated().intValue() == 1) {
                 return TRUE;
             }
@@ -139,8 +141,7 @@ public class GPTransactionService extends AbstractFeatureService implements Tran
 
         serverURL = serverURL.replace("wms", "wfs");
         if (!wfsConfigurator.matchDefaultDataSource(serverURL)) {
-            throw new ResourceNotFoundFault("Edit Mode cannot be applied to the server with url "
-                    + wfsConfigurator.getDefaultWFSDataSource());
+            throw new ResourceNotFoundFault(editNotAllowedMessage(serverURL));
         }
 
         try {
@@ -153,7 +154,7 @@ public class GPTransactionService extends AbstractFeatureService implements Tran
             request.withOperation(TransactionOperation.INSERT);
             request.withTypeName(qName);
             request.withAttributes(attributes);
-            TransactionResponseType response = request.getResponse();
+            TransactionResponseType response = checkResponse(request.getResponse(), "INSERT", typeName);
             if (response.getTransactionSummary().getTotalInserted().intValue() == 1) {
                 return TRUE;
             }
@@ -188,8 +189,7 @@ public class GPTransactionService extends AbstractFeatureService implements Tran
         }
         serverURL = serverURL.replace("wms", "wfs");
         if (!wfsConfigurator.matchDefaultDataSource(serverURL)) {
-            throw new ResourceNotFoundFault("Edit Mode cannot be applied to the server with url "
-                    + wfsConfigurator.getDefaultWFSDataSource());
+            throw new ResourceNotFoundFault(editNotAllowedMessage(serverURL));
         }
 
         try {
@@ -199,7 +199,7 @@ public class GPTransactionService extends AbstractFeatureService implements Tran
             request.withOperation(TransactionOperation.DELETE);
             request.withTypeName(new QName(typeName));
             request.withFID(fid);
-            TransactionResponseType response = request.getResponse();
+            TransactionResponseType response = checkResponse(request.getResponse(), "DELETE", typeName);
             if (response.getTransactionSummary().getTotalDeleted().intValue() == 1) {
                 return TRUE;
             }
@@ -209,5 +209,42 @@ public class GPTransactionService extends AbstractFeatureService implements Tran
                     + typeName + " - fid: " + fid);
         }
         return FALSE;
+    }
+
+    /**
+     * @param theServerURL l'indirizzo WFS del layer
+     * @return {@link String} il messaggio con l'indirizzo del layer e quello su cui l'editing è consentito
+     */
+    private String editNotAllowedMessage(String theServerURL) {
+        return "Edit Mode cannot be applied to the server with url " + theServerURL
+                + " (editing is allowed only on " + wfsConfigurator.getDefaultWFSDataSource() + ")";
+    }
+
+    /**
+     * Quando la transazione fallisce, il server risponde con un {@link ExceptionReport} al posto della
+     * {@link TransactionResponseType}: senza questo controllo l'errore diventa una ClassCastException e il messaggio
+     * del server (per esempio "layer is read-only") si perde.
+     *
+     * @param theResponse la risposta letta dal connettore, come {@link Object} perché il cast non scatti prima
+     * @param theOperation l'operazione, per il messaggio
+     * @param theTypeName il layer, per il messaggio
+     * @return {@link TransactionResponseType} la risposta della transazione
+     * @throws IllegalStateException se il server ha risposto con un {@link ExceptionReport} o con un altro tipo
+     */
+    private static TransactionResponseType checkResponse(Object theResponse, String theOperation, String theTypeName) {
+        if (theResponse instanceof TransactionResponseType) {
+            return (TransactionResponseType) theResponse;
+        }
+        if (theResponse instanceof ExceptionReport) {
+            String serverMessage = ((ExceptionReport) theResponse).getException().stream()
+                    .map(ExceptionType::getExceptionText)
+                    .flatMap(List::stream)
+                    .map(String::trim)
+                    .collect(Collectors.joining(" - "));
+            throw new IllegalStateException("La transazione WFS " + theOperation + " sul layer " + theTypeName
+                    + " non è riuscita: " + serverMessage);
+        }
+        throw new IllegalStateException("La transazione WFS " + theOperation + " sul layer " + theTypeName
+                + " ha restituito una risposta inattesa: " + theResponse);
     }
 }
