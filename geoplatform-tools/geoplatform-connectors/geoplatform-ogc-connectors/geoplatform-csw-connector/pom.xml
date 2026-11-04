@@ -78,6 +78,15 @@
         <dependency>
             <groupId>org.geosdi</groupId>
             <artifactId>geoplatform-oxm</artifactId>
+            <!-- xercesImpl (for the Castor marshaller, not used here): in the services war it replaces the JDK parser
+            and GeoTools fails to read every WMS GetCapabilities (SAXNotRecognizedException on
+            XMLConstants.ACCESS_EXTERNAL_SCHEMA). -->
+            <exclusions>
+                <exclusion>
+                    <groupId>xerces</groupId>
+                    <artifactId>xercesImpl</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- SPRING -->
