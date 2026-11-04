@@ -55,6 +55,9 @@ public class CheckDataSourceCommand implements
 
     @Value(value = "configurator{geoserver_url}")
     private String geoserverUrl;
+    // facoltativa: l'indirizzo che layer builder e importer scrivono nei layer quando è diverso da geoserver_url
+    @Value(value = "configurator{geoserver_public_url:@null}")
+    private String geoserverPublicUrl;
 
     private static final Logger logger = LoggerFactory.getLogger(
             CheckDataSourceCommand.class);
@@ -67,7 +70,11 @@ public class CheckDataSourceCommand implements
                 getClass().getSimpleName());
         logger.debug("############### GeoServer url: {}", this.geoserverUrl);
         logger.debug("############### Request: {}", request.getDatasource());
-        // logger.info("############### Layer DataSource url: {}", this.geoserverUrl.equalsIgnoreCase(request.getDatasource().substring(0,request.getDatasource().indexOf("/wms"))));
-        return new CheckDataSourceResponse(request.getDatasource().contains("/wms") ? this.geoserverUrl.equalsIgnoreCase(request.getDatasource().substring(0,request.getDatasource().indexOf("/wms"))) : false);
+        if (!request.getDatasource().contains("/wms")) {
+            return new CheckDataSourceResponse(false);
+        }
+        String layerServerUrl = request.getDatasource().substring(0, request.getDatasource().indexOf("/wms"));
+        return new CheckDataSourceResponse(this.geoserverUrl.equalsIgnoreCase(layerServerUrl)
+                || ((this.geoserverPublicUrl != null) && this.geoserverPublicUrl.equalsIgnoreCase(layerServerUrl)));
     }
 }
