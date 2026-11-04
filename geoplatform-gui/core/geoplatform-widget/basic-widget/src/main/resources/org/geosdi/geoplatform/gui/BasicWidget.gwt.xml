@@ -4,6 +4,7 @@
     <inherits name="org.moxieapps.gwt.uploader.Uploader"/>
     <!-- TODO: Inherit statup module entry point -->
     
+    <inherits name="com.google.gwt.json.JSON"/>
     <source path="client" />
     
     <entry-point class='org.geosdi.geoplatform.gui.client.BasicWidget' />
