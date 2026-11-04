@@ -42,7 +42,8 @@ import com.google.gwt.json.client.JSONValue;
 
 /**
  * Legge il messaggio di una chiamata REST fallita dal body scritto dai servizi di geo-platform, cioè
- * {@code {"gpRestExceptionMessage":{"message":"..."}}} (vedi {@code GPRestExceptionMessage}).
+ * {@code {"faultType":"...","message":"..."}} (vedi {@code GPRestExceptionMessage}), oppure lo stesso oggetto dentro
+ * {@code gpRestExceptionMessage} con i provider che tengono la radice.
  *
  * @author Giuseppe La Scaleia - CNR IMAA geoSDI Group
  * @email giuseppe.lascaleia@geosdi.org
@@ -61,7 +62,8 @@ public final class GPRestErrorMessage {
      *
      * @param theBody il body della risposta; può essere null, vuoto o non JSON
      * @param theFallback il messaggio da restituire quando nel body non c'è un messaggio leggibile
-     * @return {@link String} il messaggio di {@code gpRestExceptionMessage}, senza virgolette, oppure theFallback
+     * @return {@link String} il campo message, cercato nella radice o in {@code gpRestExceptionMessage}, senza
+     * virgolette, oppure theFallback
      */
     public static String of(String theBody, String theFallback) {
         if ((theBody == null) || theBody.trim().isEmpty()) {
@@ -70,7 +72,7 @@ public final class GPRestErrorMessage {
         try {
             JSONObject body = JSONParser.parseStrict(theBody).isObject();
             JSONValue restException = (body != null) ? body.get("gpRestExceptionMessage") : null;
-            JSONObject restExceptionObject = (restException != null) ? restException.isObject() : null;
+            JSONObject restExceptionObject = (restException != null) ? restException.isObject() : body;
             JSONValue message = (restExceptionObject != null) ? restExceptionObject.get("message") : null;
             JSONString messageString = (message != null) ? message.isString() : null;
             return (messageString != null) ? messageString.stringValue() : theFallback;
