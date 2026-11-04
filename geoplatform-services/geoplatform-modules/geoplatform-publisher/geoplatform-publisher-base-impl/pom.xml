@@ -15,6 +15,11 @@
 
     <name>Geo-Platform :: == Publish Module Base Impl</name>
 
+    <properties>
+        <!-- same version as geoplatform-ehcache-support (ehcache-version in the parent is net.sf.ehcache 2.x) -->
+        <ehcache-jakarta-version>3.12.0</ehcache-jakarta-version>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.geosdi</groupId>
@@ -130,9 +135,31 @@
             <groupId>org.geotools</groupId>
             <artifactId>gt-epsg-hsql</artifactId>
         </dependency>
+        <!-- gt-geotiff brings ehcache 3.4.0 (through imageio-ext-cog-streams), whose XML configuration needs javax JAXB:
+        in the war it shadows the jakarta ehcache used by Hibernate and the context does not start. The jakarta ehcache
+        below provides the same classes. -->
         <dependency>
             <groupId>org.geotools</groupId>
             <artifactId>gt-geotiff</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.ehcache</groupId>
+                    <artifactId>ehcache</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.ehcache</groupId>
+            <artifactId>ehcache</artifactId>
+            <version>${ehcache-jakarta-version}</version>
+            <classifier>jakarta</classifier>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.glassfish.jaxb</groupId>
+                    <artifactId>jaxb-runtime</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
