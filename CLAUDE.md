@@ -143,7 +143,10 @@ In ordine di priorità (deciso il 2026-11-03):
    ora è relativa (`WEB-INF/config.yaml`) invece del percorso assoluto di un Mac. Il browser chiama i servizi Domino su
    `localhost:8080` (CORS). Da fare: la service root in una configurazione e nginx davanti (stessa origine); gli
    indirizzi di GeoServer (`http://geoserver:8080` dentro compose, che il browser non risolve); il datastore JNDI del layer builder si crea solo alla creazione del layer, da provare dalla UI;
-   un `logback.xml` meno verboso per il container (oggi alcuni logger scrivono chiavi e password). Dettagli e decisioni
+   un `logback.xml` meno verboso per il container (oggi alcuni logger scrivono chiavi e password). **Il 2026-11-04
+   sera Docker è stato svuotato** (container, volumi, immagini, rete e cache di build cancellati, Docker Desktop
+   spento): per riprendere vanno ricostruite le immagini (`build-frontend.sh` e il war del servizio), riavviato il
+   compose e rilanciato `bootstrap-core.sh`, perché i dati di PostGIS, GeoServer e Importer non ci sono più. Dettagli e decisioni
    sulla modalità sviluppo nel `CLAUDE.md` di `../gp_advanced_extensions` ("`mvn gwt:run` della base app").
 4. Con l'applicazione avviata, verificare dal client le chiamate REST migrate a Domino (layer builder, workspace del
    file e del CSV importer, geocoding WFS). **Prova dalla UI iniziata il 2026-11-04**: stato, correzioni fatte e
