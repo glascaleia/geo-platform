@@ -85,11 +85,6 @@
             <version>${project.version}</version>
         </dependency>
 
-        <dependency>
-            <groupId>javax.ws.rs</groupId>
-            <artifactId>javax.ws.rs-api</artifactId>
-        </dependency>
-
         <!-- TODO  REMOVE SCOPE PROVIDED WITH SPRING 3.2.5.RELEASE-->
         <dependency>
             <groupId>org.geosdi</groupId>
@@ -190,9 +185,25 @@
             <artifactId>log4j-over-slf4j</artifactId>
         </dependency>
 
+        <!-- Client REST: Domino REST, JSON con domino-jackson. I processor generano la factory delle richieste e i
+        mapper JSON durante la compilazione. -->
         <dependency>
-            <groupId>org.fusesource.restygwt</groupId>
-            <artifactId>restygwt</artifactId>
+            <groupId>org.dominokit</groupId>
+            <artifactId>domino-rest-client</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.dominokit</groupId>
+            <artifactId>domino-jackson</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.dominokit</groupId>
+            <artifactId>domino-rest-processor</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.dominokit</groupId>
+            <artifactId>domino-jackson-processor</artifactId>
+            <scope>provided</scope>
         </dependency>
 
     </dependencies>
@@ -210,6 +221,33 @@
                         <goals>
                             <goal>resources</goal>
                         </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Il compilatore GWT dell'applicazione legge i sorgenti da questo jar: quelli generati dai processor di
+            Domino esistono solo dopo la compilazione, quindi vengono copiati accanto alle classi. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-generated-gwt-sources</id>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.outputDirectory}</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${project.build.directory}/generated-sources/annotations</directory>
+                                    <includes>
+                                        <include>**/*.java</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

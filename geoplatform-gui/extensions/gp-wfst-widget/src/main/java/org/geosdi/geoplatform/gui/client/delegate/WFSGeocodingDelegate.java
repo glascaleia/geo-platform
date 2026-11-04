@@ -35,23 +35,18 @@
  */
 package org.geosdi.geoplatform.gui.client.delegate;
 
-import com.google.gwt.core.client.GWT;
-import org.fusesource.restygwt.client.Method;
-import org.fusesource.restygwt.client.MethodCallback;
-import org.geosdi.geoplatform.gui.client.model.geocoding.WFSAddressDTO;
+import org.dominokit.rest.DominoRestConfig;
 import org.geosdi.geoplatform.gui.client.puregwt.geocoding.GeocodingHandlerManager;
 import org.geosdi.geoplatform.gui.client.puregwt.geocoding.event.*;
 import org.geosdi.geoplatform.gui.client.puregwt.wfs.event.WFSZoomEvent;
-import org.geosdi.geoplatform.gui.client.service.WFSGeocodingService;
+import org.geosdi.geoplatform.gui.client.rest.GPRestErrorMessage;
+import org.geosdi.geoplatform.gui.client.service.WFSGeocodingServiceFactory;
 import org.geosdi.geoplatform.gui.client.service.request.GPGeocodingAddressRequestDTO;
-import org.geosdi.geoplatform.gui.client.service.response.FeatureCollectionResponse;
-import org.geosdi.geoplatform.gui.client.service.response.WFSAddressStore;
 import org.geosdi.geoplatform.gui.configuration.message.GeoPlatformMessage;
 import org.geosdi.geoplatform.gui.puregwt.GPEventBus;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.util.List;
 
 /**
  * @author Vito Salvia - CNR IMAA geoSDI Group
@@ -66,7 +61,12 @@ public class WFSGeocodingDelegate implements IWFSGeocodingDelegate {
     private static final RemoveMarkerEvent REMOVE_MARKER_EVENT = new RemoveMarkerEvent();
     //
     private static final ClearLayerEvent CLEAR_LAYER_EVENT = new ClearLayerEvent();
-    static WFSGeocodingService wfsGeocodingService = GWT.create(WFSGeocodingService.class);
+    static {
+        // Domino REST vuole la sua factory delle richieste e il suo contesto prima della prima richiesta.
+        DominoRestConfig.initDefaults();
+    }
+
+    private static final WFSGeocodingServiceFactory wfsGeocodingService = WFSGeocodingServiceFactory.INSTANCE;
     @Inject
     private GPEventBus eventBus;
 
@@ -76,21 +76,19 @@ public class WFSGeocodingDelegate implements IWFSGeocodingDelegate {
      */
     @Override
     public void searchAddress(GPGeocodingAddressRequestDTO gpGeocodingAddressRequestDTO) {
-        wfsGeocodingService.searchAddress(gpGeocodingAddressRequestDTO, new MethodCallback<FeatureCollectionResponse>() {
-            @Override
-            public void onFailure(Method method, Throwable throwable) {
-                GeocodingHandlerManager.fireEvent(CLEAR_GEOCODING_GRID_EVENT);
-                GeocodingHandlerManager.fireEvent(UN_MASK_GEOCODING_GRID_EVENT);
-                GeocodingHandlerManager.fireEvent(CLEAR_LAYER_EVENT);
-                GeoPlatformMessage.errorMessage("Error",method.getResponse().getText());
-            }
-
-            @Override
-            public void onSuccess(Method method, FeatureCollectionResponse featureCollectionResponse) {
-                GeocodingHandlerManager.fireEvent(REMOVE_MARKER_EVENT);
-                eventBus.fireEvent(WFS_ZOOM_EVENT);
-                GeocodingHandlerManager.fireEvent(new PopulateGeocodingGridEvent(featureCollectionResponse));
-            }
-        });
+        wfsGeocodingService.searchAddress(gpGeocodingAddressRequestDTO)
+                .onSuccess(featureCollectionResponse -> {
+                    GeocodingHandlerManager.fireEvent(REMOVE_MARKER_EVENT);
+                    eventBus.fireEvent(WFS_ZOOM_EVENT);
+                    GeocodingHandlerManager.fireEvent(new PopulateGeocodingGridEvent(featureCollectionResponse));
+                })
+                .onFailed(failedResponse -> {
+                    GeocodingHandlerManager.fireEvent(CLEAR_GEOCODING_GRID_EVENT);
+                    GeocodingHandlerManager.fireEvent(UN_MASK_GEOCODING_GRID_EVENT);
+                    GeocodingHandlerManager.fireEvent(CLEAR_LAYER_EVENT);
+                    GeoPlatformMessage.errorMessage("Error",
+                            GPRestErrorMessage.of(failedResponse.getBody(), failedResponse.getBody()));
+                })
+                .send();
     }
 }

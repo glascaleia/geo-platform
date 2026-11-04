@@ -35,15 +35,20 @@
  */
 package org.geosdi.geoplatform.gui.client.service.response;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * La FeatureCollection GeoJSON della risposta del geocoding: il server (org.geojson) scrive anche il "type", che
+ * il client non usa.
+ *
  * @author Vito Salvia - CNR IMAA geoSDI Group
  * @email vito.salvia@gmail.com
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class FeatureCollectionResponse {
 
     @JsonProperty(value = "features")

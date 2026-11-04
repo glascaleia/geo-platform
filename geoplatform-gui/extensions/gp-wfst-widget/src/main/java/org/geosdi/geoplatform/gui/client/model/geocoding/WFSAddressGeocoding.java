@@ -52,9 +52,9 @@ public class WFSAddressGeocoding extends GeoPlatformBeanModel {
     //
 
     public WFSAddressGeocoding(FeatureDTO featureDTO) {
-        set(DESCRIPTION.getValue(),featureDTO.getProperties().get("displayName"));
-        set(LONGITUDE.getValue(),featureDTO.getGeometry().isObject().get("coordinates").isArray().get(0).isNumber().doubleValue() );
-        set(LATITUDE.getValue(),featureDTO.getGeometry().isObject().get("coordinates").isArray().get(1).isNumber().doubleValue() );
+        set(DESCRIPTION.getValue(), featureDTO.getProperties().getDisplayName());
+        set(LONGITUDE.getValue(), featureDTO.getGeometry().getLongitude());
+        set(LATITUDE.getValue(), featureDTO.getGeometry().getLatitude());
     }
 
 }

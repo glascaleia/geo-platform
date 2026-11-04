@@ -35,75 +35,77 @@
  */
 package org.geosdi.geoplatform.gui.client.service.response;
 
-import com.google.gwt.json.client.JSONValue;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
+ * Una Feature GeoJSON della risposta del geocoding: il server (org.geojson) scrive anche il "type", che il client
+ * non usa.
+ *
  * @author Vito Salvia - CNR IMAA geoSDI Group
  * @email vito.salvia@gmail.com
  */
-public class FeatureDTO  implements Serializable  {
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class FeatureDTO implements Serializable {
 
     private static final long serialVersionUID = -5193900319713395815L;
     //
-    private JSONValue geometry;
-    private Map<String,Object> properties = new HashMap<>();
+    private FeaturePointDTO geometry;
+    private FeaturePropertiesDTO properties;
     private String id;
 
+    /**
+     * Costruttore vuoto, per domino-jackson.
+     */
     public FeatureDTO() {
     }
 
     /**
-     *
-     * @return {@link JSONValue}
+     * @return {@link FeaturePointDTO} la geometria, un punto
      */
-    public JSONValue getGeometry() {
+    public FeaturePointDTO getGeometry() {
         return geometry;
     }
 
     /**
-     *
-     * @param geometry
+     * @param theGeometry la geometria, un punto
      */
-    public void setGeometry(JSONValue geometry) {
-        this.geometry = geometry;
+    public void setGeometry(FeaturePointDTO theGeometry) {
+        this.geometry = theGeometry;
     }
 
     /**
-     *
-     * @return {@link Map}
+     * @return {@link FeaturePropertiesDTO} le proprietà dell'indirizzo
      */
-    public Map<String, Object> getProperties() {
+    public FeaturePropertiesDTO getProperties() {
         return properties;
     }
 
     /**
-     *
-     * @param properties
+     * @param theProperties le proprietà dell'indirizzo
      */
-    public void setProperties(Map<String, Object> properties) {
-        this.properties = properties;
+    public void setProperties(FeaturePropertiesDTO theProperties) {
+        this.properties = theProperties;
     }
 
     /**
-     *
-     * @return {@link String}
+     * @return {@link String} l'identificativo del luogo
      */
     public String getId() {
         return id;
     }
 
-    /***
-     *
-     * @param id
+    /**
+     * @param theId l'identificativo del luogo
      */
-    public void setId(String id) {
-        this.id = id;
+    public void setId(String theId) {
+        this.id = theId;
     }
 
+    /**
+     * @return {@link String}
+     */
     @Override
     public String toString() {
         return "FeatureDTO{" +

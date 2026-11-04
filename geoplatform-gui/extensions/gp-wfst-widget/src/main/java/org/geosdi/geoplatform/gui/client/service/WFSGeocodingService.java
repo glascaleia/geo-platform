@@ -35,28 +35,33 @@
  */
 package org.geosdi.geoplatform.gui.client.service;
 
-import org.fusesource.restygwt.client.MethodCallback;
-import org.fusesource.restygwt.client.RestService;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import org.dominokit.rest.shared.request.service.annotations.RequestFactory;
 import org.geosdi.geoplatform.gui.client.service.request.GPGeocodingAddressRequestDTO;
 import org.geosdi.geoplatform.gui.client.service.response.FeatureCollectionResponse;
 
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-
 /**
+ * Client Domino REST del geocoding (Nominatim). Il processor genera {@code WFSGeocodingServiceFactory}.
+ *
  * @author Vito Salvia - CNR IMAA geoSDI Group
  * @email vito.salvia@gmail.com
  */
-public interface WFSGeocodingService extends RestService {
+@RequestFactory(serviceRoot = WFSGeocodingService.SERVICE_ROOT)
+@Path("geocoding/nominatim")
+public interface WFSGeocodingService {
 
-    String GEOCODING_SERVICE_URL = "http://localhost:8080/geoplatform-service/geocoding/nominatim";
+    String SERVICE_ROOT = "http://localhost:8080/geoplatform-service";
 
     /**
-     * @param callback
+     * @param gpGeocodingAddressRequestDTO l'indirizzo da cercare
+     * @return {@link FeatureCollectionResponse} gli indirizzi trovati
      */
     @POST
-    @Path(GEOCODING_SERVICE_URL + "/searchAddress")
+    @Path("searchAddress")
+    @Consumes("application/json")
     @Produces("application/json")
-    void searchAddress(GPGeocodingAddressRequestDTO gpGeocodingAddressRequestDTO, MethodCallback<FeatureCollectionResponse> callback);
+    FeatureCollectionResponse searchAddress(GPGeocodingAddressRequestDTO gpGeocodingAddressRequestDTO);
 }
